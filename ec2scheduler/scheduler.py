@@ -54,7 +54,7 @@ def init(args):
   global schedules
   schedules = get_schedules()
 
-def connect_from_conf(aws_conf):
+def connect_from_conf(aws_region):
   """ Connect to ec2 and elb region
 
     Args:
@@ -63,9 +63,8 @@ def connect_from_conf(aws_conf):
     Returns:
       Dict with ec2 and elb connection object for region
   """
-  aws_access_key = config.get(aws_conf,'access_key','')
-  aws_secret_key = config.get(aws_conf,'secret_key','')
-  aws_region = config.get(aws_conf, 'region','')
+  aws_access_key = config.get(aws_region,'access_key','')
+  aws_secret_key = config.get(aws_region,'secret_key','')
 
   return {
     'ec2':
