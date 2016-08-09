@@ -42,13 +42,15 @@ def init(args):
   Args:
     args: CLI arguments.
   """
-  # Setup AWS connection
-  aws_eu = connect_from_conf('aws_eu')
-  aws_us = connect_from_conf('aws_us')
-  ec2_conn['eu-west-1'] = aws_eu['ec2']
-  elb_conn['eu-west-1'] = aws_eu['elb']
-  ec2_conn['us-west-1'] = aws_us['ec2']
-  elb_conn['us-west-1'] = aws_us['elb']
+
+  for region in config.sections():
+    if region == 'schedule':
+      continue
+
+    connection = connect_from_conf(region)
+    ec2_conn[region] = connection['ec2']
+    elb_conn[region] = connection['elb']
+ 
   global schedules
   schedules = get_schedules()
 
