@@ -18,10 +18,14 @@ from ConfigParser import SafeConfigParser
 import boto.ec2
 import boto.ec2.elb
 import sys, os, json, datetime, time
+from pytz import timezone
 
 config = SafeConfigParser()
 ec2_conn = {}
 elb_conn = {}
+
+def utcnow():
+    return datetime.datetime.now(tz=timezone('America/Sao_Paulo'))
 
 def run(args):
   """ Run the script
@@ -30,6 +34,7 @@ def run(args):
         args: CLI arguments.
   """
   config.read([args['--config'], 'aws.conf'])
+
   init(args)
 
   while True:
@@ -92,6 +97,7 @@ def get_schedules():
 def schedule():
   """ Check all schedule configurations to start and stop instances """
   for profile in schedules['profiles']:
+    print profile['name']
     instances = _get_instances(profile['instance_tags'], profile['region'])
     start_stop_instances(instances, profile['schedule'])
     reregister_elb_instances(profile)
@@ -118,14 +124,17 @@ def start_stop_instances(instances, schedule):
   for reservation in instances:
     for instance in reservation.instances:
       region = instance.placement
+      
+      print utcnow().isoformat() + " " + instance.id + " " + instance.state
+
       if instance.state == 'running' and _get_desired_state(schedule) == 'stop':
-        print "Should stop " + instance.id + "."
+        print utcnow().isoformat() + " Should stop " + instance.id + "."
         instance.stop()
       elif instance.state == 'stopped' and _get_desired_state(schedule) == 'start':
-        print "Should start " + instance.id + "."
+        print utcnow().isoformat() + " Should start " + instance.id + "."
         instance.start()
       else:
-        print "Nothing to do."
+        print utcnow().isoformat() + " Nothing to do."
 
 def _get_desired_state(schedule):
   """ Find the desired state give a schedule
@@ -136,8 +145,9 @@ def _get_desired_state(schedule):
       Returns:
         A string with the desired state. (start/stop)
   """
-  current_hour = int(time.strftime("%H", time.gmtime()))
-  current_week_day = time.strftime("%A", time.gmtime()).lower()
+  current_hour = utcnow().hour
+  current_week_day = time.strftime("%A", utcnow().timetuple()).lower()
+
   start = schedule[current_week_day]['start']
   stop = schedule[current_week_day]['stop']
 
